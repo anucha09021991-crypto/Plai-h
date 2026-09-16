@@ -1,0 +1,607 @@
+-- ภาษาไทยข้อมูล
+-- สคริปต์ UI Hub 4 แถบ: Hitbox / Character / About / Customize
+-- ลิขสิทธิ์ Plai Anuwat ⚡ สุดเท่
+-- แก้: Hitbox ขนาดเริ่ม 10 / แก้ข้อความใน About
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local VirtualUser = game:GetService("VirtualUser")
+
+local player = Players.LocalPlayer
+
+-- ===== ค่าตั้งต้น =====
+local state = {
+    hitboxOn = false,
+    hitboxTransparency = 0.8,
+    hitboxSize = 10, -- ปรับเป็น 10 ตามที่สั่ง
+    hitboxUseTheme = true,
+    hitboxCustomColor = Color3.fromRGB(128, 128, 128),
+    speedValue = 50,
+    loopSpeed = false,
+    jumpPower = 50,
+    loopJump = false,
+    fov = 70,
+    noclip = false,
+    infiniteJump = false,
+    antiAFK = false,
+    antiFling = false,
+    lookOn = false,
+    savedSpeed = 16,
+    uiTransparency = 0,
+    uiScale = 1,
+    iconTransparency = 0,
+    themeColor = Color3.fromRGB(255, 200, 0),
+    iconShape = "วงกลม",
+}
+
+-- ===== GUI หลัก =====
+local gui = Instance.new("ScreenGui")
+gui.Name = "PlaiHub"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local toggle = Instance.new("TextButton")
+toggle.Size = UDim2.new(0, 62, 0, 62)
+toggle.Position = UDim2.new(0, 20, 0.5, -31)
+toggle.BackgroundColor3 = state.themeColor
+toggle.Text = "⚡"
+toggle.TextSize = 34
+toggle.TextColor3 = Color3.fromRGB(20, 20, 30)
+toggle.Font = Enum.Font.GothamBlack
+toggle.BorderSizePixel = 0
+toggle.AutoButtonColor = false
+toggle.Active = true
+toggle.Parent = gui
+
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(1, 0)
+toggleCorner.Parent = toggle
+
+local toggleStroke = Instance.new("UIStroke")
+toggleStroke.Thickness = 3
+toggleStroke.Color = Color3.fromRGB(255, 255, 255)
+toggleStroke.Transparency = 0.3
+toggleStroke.Parent = toggle
+
+local toggleGradient = Instance.new("UIGradient")
+toggleGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 220, 100)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 100, 255)),
+})
+toggleGradient.Rotation = 45
+toggleGradient.Parent = toggle
+
+-- ===== หน้าต่างหลัก =====
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0, 500, 0, 340)
+main.Position = UDim2.new(0.5, -250, 0.5, -170)
+main.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
+main.BackgroundTransparency = state.uiTransparency
+main.BorderSizePixel = 0
+main.Visible = false
+main.Parent = gui
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 14)
+mainCorner.Parent = main
+
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Thickness = 2
+mainStroke.Color = state.themeColor
+mainStroke.Parent = main
+
+local mainGradient = Instance.new("UIGradient")
+mainGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 25, 45)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(18, 18, 28)),
+})
+mainGradient.Rotation = 90
+mainGradient.Parent = main
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 42)
+title.BackgroundTransparency = 1
+title.Text = "⚡ Plai Hub ⚡"
+title.TextColor3 = state.themeColor
+title.TextSize = 22
+title.Font = Enum.Font.GothamBlack
+title.Parent = main
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 32, 0, 32)
+closeBtn.Position = UDim2.new(1, -40, 0, 5)
+closeBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 90)
+closeBtn.Text = "✖"
+closeBtn.TextColor3 = Color3.new(1,1,1)
+closeBtn.TextSize = 15
+closeBtn.Font = Enum.Font.GothamBlack
+closeBtn.BorderSizePixel = 0
+closeBtn.Parent = main
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(1, 0)
+closeCorner.Parent = closeBtn
+
+local tabBar = Instance.new("Frame")
+tabBar.Size = UDim2.new(1, -20, 0, 36)
+tabBar.Position = UDim2.new(0, 10, 0, 48)
+tabBar.BackgroundTransparency = 1
+tabBar.Parent = main
+
+local tabLayout = Instance.new("UIListLayout")
+tabLayout.FillDirection = Enum.FillDirection.Horizontal
+tabLayout.Padding = UDim.new(0, 5)
+tabLayout.Parent = tabBar
+
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1, -20, 1, -100)
+content.Position = UDim2.new(0, 10, 0, 90)
+content.BackgroundColor3 = Color3.fromRGB(26, 26, 40)
+content.BackgroundTransparency = state.uiTransparency
+content.BorderSizePixel = 0
+content.Parent = main
+
+local contentCorner = Instance.new("UICorner")
+contentCorner.CornerRadius = UDim.new(0, 10)
+contentCorner.Parent = content
+
+local pages = {}
+local tabs = {}
+
+local tabNames = {"🎯 Hitbox", "🏃 Character", "⚡ About", "🎨 Customize"}
+
+local function makePage(name)
+    local page = Instance.new("ScrollingFrame")
+    page.Size = UDim2.new(1, -10, 1, -10)
+    page.Position = UDim2.new(0, 5, 0, 5)
+    page.BackgroundTransparency = 1
+    page.BorderSizePixel = 0
+    page.ScrollBarThickness = 4
+    page.ScrollBarImageColor3 = state.themeColor
+    page.CanvasSize = UDim2.new(0, 0, 0, 0)
+    page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    page.Visible = false
+    page.Parent = content
+
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 6)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Parent = page
+
+    pages[name] = page
+    return page
+end
+
+for _, name in ipairs(tabNames) do
+    local tabBtn = Instance.new("TextButton")
+    tabBtn.Size = UDim2.new(0, 112, 1, 0)
+    tabBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+    tabBtn.Text = name
+    tabBtn.TextColor3 = Color3.new(1,1,1)
+    tabBtn.TextSize = 12
+    tabBtn.Font = Enum.Font.GothamBold
+    tabBtn.BorderSizePixel = 0
+    tabBtn.Parent = tabBar
+
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 8)
+    c.Parent = tabBtn
+
+    makePage(name)
+    tabs[name] = tabBtn
+
+    tabBtn.MouseButton1Click:Connect(function()
+        for n, p in pairs(pages) do
+            p.Visible = (n == name)
+            tabs[n].BackgroundColor3 = (n == name) and state.themeColor or Color3.fromRGB(40, 40, 60)
+            tabs[n].TextColor3 = (n == name) and Color3.fromRGB(20,20,30) or Color3.new(1,1,1)
+        end
+    end)
+end
+
+pages[tabNames[1]].Visible = true
+tabs[tabNames[1]].BackgroundColor3 = state.themeColor
+tabs[tabNames[1]].TextColor3 = Color3.fromRGB(20,20,30)
+
+-- ===== ฟังก์ชันช่วย =====
+local function makeLabel(parent, text)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -10, 0, 24)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = text
+    lbl.TextColor3 = Color3.fromRGB(220, 220, 255)
+    lbl.TextSize = 13
+    lbl.Font = Enum.Font.GothamMedium
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = parent
+    return lbl
+end
+
+local function makeToggle(parent, text, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -10, 0, 34)
+    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 65)
+    btn.Text = "❌ " .. text
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.TextSize = 13
+    btn.Font = Enum.Font.GothamBold
+    btn.BorderSizePixel = 0
+    btn.Parent = parent
+
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 8)
+    c.Parent = btn
+
+    local on = false
+    btn.MouseButton1Click:Connect(function()
+        on = not on
+        btn.Text = (on and "✅ " or "❌ ") .. text
+        btn.BackgroundColor3 = on and state.themeColor or Color3.fromRGB(45, 45, 65)
+        btn.TextColor3 = on and Color3.fromRGB(20,20,30) or Color3.new(1,1,1)
+        callback(on)
+    end)
+    return btn
+end
+
+local function makeInput(parent, placeholder, callback)
+    local box = Instance.new("TextBox")
+    box.Size = UDim2.new(1, -10, 0, 32)
+    box.BackgroundColor3 = Color3.fromRGB(45, 45, 65)
+    box.Text = ""
+    box.PlaceholderText = placeholder
+    box.PlaceholderColor3 = Color3.fromRGB(140, 140, 180)
+    box.TextColor3 = Color3.new(1,1,1)
+    box.TextSize = 13
+    box.Font = Enum.Font.GothamMedium
+    box.BorderSizePixel = 0
+    box.ClearTextOnFocus = false
+    box.Parent = parent
+
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 8)
+    c.Parent = box
+
+    box.FocusLost:Connect(function()
+        callback(box.Text)
+    end)
+    return box
+end
+
+local function applyTheme(color)
+    state.themeColor = color
+    mainStroke.Color = color
+    title.TextColor3 = color
+    toggle.BackgroundColor3 = color
+    toggleGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, color:Lerp(Color3.new(1,1,1), 0.3)),
+        ColorSequenceKeypoint.new(1, color:Lerp(Color3.new(0,0,0), 0.3)),
+    })
+    for n, t in pairs(tabs) do
+        if pages[n].Visible then
+            t.BackgroundColor3 = color
+            t.TextColor3 = Color3.fromRGB(20,20,30)
+        end
+    end
+end
+
+-- ===== TAB 1: HITBOX =====
+local hbPage = pages[tabNames[1]]
+makeLabel(hbPage, "🎯 ระบบ Hitbox สุดเท่")
+
+local hbOn = false
+local hitboxParts = {}
+
+local hbToggle = makeToggle(hbPage, "เปิด/ปิด Hitbox", function(on)
+    hbOn = on
+    if not on then
+        for _, p in pairs(hitboxParts) do
+            if p and p.Parent then p:Destroy() end
+        end
+        hitboxParts = {}
+    end
+end)
+
+makeInput(hbPage, "🫥 ความจาง Hitbox (0-1) [เริ่ม 0.8]", function(txt)
+    local n = tonumber(txt)
+    if n then state.hitboxTransparency = math.clamp(n, 0, 1) end
+end)
+
+makeInput(hbPage, "📏 ขนาด Hitbox เช่น 10", function(txt)
+    local n = tonumber(txt)
+    if n then state.hitboxSize = math.max(1, n) end
+end)
+
+makeLabel(hbPage, "🎨 เลือกสี Hitbox (กดเปลี่ยนเลย)")
+
+local hbColorFrame = Instance.new("Frame")
+hbColorFrame.Size = UDim2.new(1, -10, 0, 60)
+hbColorFrame.BackgroundTransparency = 1
+hbColorFrame.Parent = hbPage
+
+local hbColorLayout = Instance.new("UIGridLayout")
+hbColorLayout.CellSize = UDim2.new(0, 40, 0, 25)
+hbColorLayout.CellPadding = UDim2.new(0, 5, 0, 5)
+hbColorLayout.Parent = hbColorFrame
+
+local hbColors = {
+    {name="เทา", color=Color3.fromRGB(128, 128, 128), theme=false},
+    {name="แดง", color=Color3.fromRGB(255, 60, 60), theme=false},
+    {name="ม่วง", color=Color3.fromRGB(160, 80, 255), theme=false},
+    {name="ฟ้า", color=Color3.fromRGB(60, 160, 255), theme=false},
+    {name="เขียว", color=Color3.fromRGB(60, 220, 120), theme=false},
+    {name="เหลือง", color=Color3.fromRGB(255, 220, 60), theme=false},
+    {name="คราม", color=Color3.fromRGB(40, 60, 180), theme=false},
+    {name="ธีม", color=Color3.fromRGB(255, 200, 0), theme=true},
+}
+
+for _, c in ipairs(hbColors) do
+    local cb = Instance.new("TextButton")
+    cb.BackgroundColor3 = c.color
+    cb.Text = ""
+    cb.BorderSizePixel = 0
+    cb.Parent = hbColorFrame
+
+    local cc = Instance.new("UICorner")
+    cc.CornerRadius = UDim.new(0, 6)
+    cc.Parent = cb
+
+    cb.MouseButton1Click:Connect(function()
+        state.hitboxUseTheme = c.theme
+        state.hitboxCustomColor = c.color
+    end)
+end
+
+makeLabel(hbPage, "⌨️ ปุ่มลัด: กด Q เปิด/ปิด Hitbox")
+
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.Q then
+        hbOn = not hbOn
+        hbToggle.Text = (hbOn and "✅ " or "❌ ") .. "เปิด/ปิด Hitbox"
+        hbToggle.BackgroundColor3 = hbOn and state.themeColor or Color3.fromRGB(45, 45, 65)
+        hbToggle.TextColor3 = hbOn and Color3.fromRGB(20,20,30) or Color3.new(1,1,1)
+        if not hbOn then
+            for _, p in pairs(hitboxParts) do
+                if p and p.Parent then p:Destroy() end
+            end
+            hitboxParts = {}
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if not hbOn then return end
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= player then
+            local char = plr.Character
+            if char then
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hrp and hum and hum.Health > 0 then
+                    local box = hrp:FindFirstChild("PlaiHitbox")
+                    local useColor = state.hitboxUseTheme and state.themeColor or state.hitboxCustomColor
+                    if not box then
+                        box = Instance.new("BoxHandleAdornment")
+                        box.Name = "PlaiHitbox"
+                        box.Adornee = hrp
+                        box.AlwaysOnTop = true
+                        box.ZIndex = 5
+                        box.Size = Vector3.new(state.hitboxSize, state.hitboxSize, state.hitboxSize)
+                        box.Transparency = state.hitboxTransparency
+                        box.Color3 = useColor
+                        box.Parent = hrp
+                        table.insert(hitboxParts, box)
+                    else
+                        box.Size = Vector3.new(state.hitboxSize, state.hitboxSize, state.hitboxSize)
+                        box.Transparency = state.hitboxTransparency
+                        box.Color3 = useColor
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- ===== TAB 2: CHARACTER =====
+local chPage = pages[tabNames[2]]
+makeLabel(chPage, "🏃 ระบบตัวละคร")
+
+makeInput(chPage, "💨 WalkSpeed (ใส่ค่า)", function(txt)
+    local n = tonumber(txt)
+    if n then
+        state.speedValue = n
+        if not state.loopSpeed then
+            local char = player.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            if hum then hum.WalkSpeed = n end
+        end
+    end
+end)
+
+makeToggle(chPage, "🔁 Loop WalkSpeed", function(on)
+    state.loopSpeed = on
+end)
+
+makeInput(chPage, "🦘 JumpPower (ใส่ค่า)", function(txt)
+    local n = tonumber(txt)
+    if n then
+        state.jumpPower = n
+        if not state.loopJump then
+            local char = player.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            if hum then hum.JumpPower = n end
+        end
+    end
+end)
+
+makeToggle(chPage, "🔁 Loop JumpPower", function(on)
+    state.loopJump = on
+end)
+
+makeInput(chPage, "👁️ Fov (ค่าเริ่ม 70)", function(txt)
+    local n = tonumber(txt)
+    if n then
+        state.fov = n
+        workspace.CurrentCamera.FieldOfView = n
+    end
+end)
+
+makeToggle(chPage, "🚪 Noclip", function(on)
+    state.noclip = on
+    local char = player.Character
+    if char then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") and part.CanCollide then
+                part.CanCollide = not on
+            end
+        end
+    end
+end)
+
+makeToggle(chPage, "🦘 Infinite Jump", function(on)
+    state.infiniteJump = on
+end)
+
+makeToggle(chPage, "🛡️ Anti-AFK (กันโดนเตะ)", function(on)
+    state.antiAFK = on
+end)
+
+makeToggle(chPage, "🛡️ Anti-Fling (กันโดนปา)", function(on)
+    state.antiFling = on
+    local char = player.Character
+    if char then
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local protector = hrp:FindFirstChild("PlaiAntiFling")
+            if on and not protector then
+                local att = Instance.new("Attachment")
+                att.Name = "PlaiAntiFlingAtt"
+                att.Parent = hrp
+                local ao = Instance.new("AlignOrientation")
+                ao.Name = "PlaiAntiFling"
+                ao.Mode = Enum.OrientationAlignmentMode.OneAttachment
+                ao.Attachment0 = att
+                ao.RigidityEnabled = true
+                ao.Parent = hrp
+            elseif not on and protector then
+                protector:Destroy()
+                local att = hrp:FindFirstChild("PlaiAntiFlingAtt")
+                if att then att:Destroy() end
+            end
+        end
+    end
+end)
+
+makeToggle(chPage, "👀 Look (บันทึก/คืนค่า)", function(on)
+    state.lookOn = on
+    local char = player.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        if on then
+            state.savedSpeed = hum.WalkSpeed
+        else
+            hum.WalkSpeed = state.savedSpeed
+        end
+    end
+end)
+
+task.spawn(function()
+    while task.wait(0.1) do
+        local char = player.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            if state.loopSpeed then hum.WalkSpeed = state.speedValue end
+            if state.loopJump then hum.JumpPower = state.jumpPower end
+            if state.noclip then
+                for _, part in ipairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") then part.CanCollide = false end
+                end
+            end
+            if state.antiFling then
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    local vel = hrp.AssemblyLinearVelocity
+                    if vel.Magnitude > 100 then
+                        hrp.AssemblyLinearVelocity = Vector3.new(0, vel.Y, 0)
+                    end
+                    local ang = hrp.AssemblyAngularVelocity
+                    if ang.Magnitude > 10 then
+                        hrp.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                    end
+                end
+            end
+        end
+    end
+end)
+
+player.Idled:Connect(function()
+    if state.antiAFK then
+        VirtualUser:CaptureController()
+        VirtualUser:ClickButton2(Vector2.new())
+    end
+end)
+
+player.CharacterAdded:Connect(function(char)
+    task.wait(1)
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        if state.loopSpeed then hum.WalkSpeed = state.speedValue end
+        if state.loopJump then hum.JumpPower = state.jumpPower end
+    end
+    if state.antiFling then
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local att = Instance.new("Attachment")
+            att.Name = "PlaiAntiFlingAtt"
+            att.Parent = hrp
+            local ao = Instance.new("AlignOrientation")
+            ao.Name = "PlaiAntiFling"
+            ao.Mode = Enum.OrientationAlignmentMode.OneAttachment
+            ao.Attachment0 = att
+            ao.RigidityEnabled = true
+            ao.Parent = hrp
+        end
+    end
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if state.infiniteJump then
+        local char = player.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+    end
+end)
+
+-- ===== TAB 3: ABOUT =====
+local abPage = pages[tabNames[3]]
+makeLabel(abPage, "⚡ Plai Hub — สุดเท่ ไม่มีใครเหมือน")
+makeLabel(abPage, "👨‍💻 ผู้สร้าง: Plai Anuwat")
+makeLabel(abPage, "©️ ลิขสิทธิ์: Plai Anuwat")
+makeLabel(abPage, "🚀 เวอร์ชัน: 3.6.0 ⚡")
+makeLabel(abPage, "✨ ฟีเจอร์: Hitbox / Character / Customize")
+makeLabel(abPage, "🎯 Hitbox ความจาง 0.8 ขนาดเริ่ม 10")
+makeLabel(abPage, "🛡️ Anti-AFK / Anti-Fling กันโดนปา")
+makeLabel(abPage, "🎨 ธีมสีเปลี่ยนได้ทันที (ไอคอนเปลี่ยนตาม)")
+makeLabel(abPage, "🖱️ ไอคอนลากได้ทุกที่")
+makeLabel(abPage, "🙏 ขอบคุณที่ใช้ Plai Hub ⚡")
+
+-- ===== TAB 4: CUSTOMIZE =====
+local cuPage = pages[tabNames[4]]
+makeLabel(cuPage, "🎨 ปรับแต่ง UI สุดเท่")
+
+local colorFrame = Instance.new("Frame")
+colorFrame.Size = UDim2.new(1, -10, 0, 80)
+colorFrame.BackgroundTransparency = 1
+colorFrame.Parent = cuPage
+
+local colorLayout = Instance.new("UIGridLayout")
+colorLayout.CellSize = UDim2.new(0, 50, 0, 25)
+colorLayout.CellPadding = UDim2.new(0, 5, 0, 5)
+colorLayout.Parent = colorFrame
+
+local colors = {
+    {name="แดง", color=Color3.fromRGB(255, 60, 60)},
+    {name="ม่วง", color=Color3.fromRGB(160, 80, 255)},
+    {name="ฟ้า", color=Co
